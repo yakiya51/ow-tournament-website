@@ -21,6 +21,8 @@ export const serverSchema = z.object({
   ),
   DISCORD_CLIENT_ID: z.string(),
   DISCORD_CLIENT_SECRET: z.string(),
+  BATTLENET_CLIENT_ID: z.string(),
+  BATTLENET_CLIENT_SECRET: z.string(),
 });
 
 /**
