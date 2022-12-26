@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  color: theme("colors.neutral.100");
+  background-color: theme("colors.neutral.900");
+  color: #fafafa;
+}
+main {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+}
+div {
+  border-color: theme("colors.neutral.700");
+}
+
+#__next {
+  height: 100%;
+}

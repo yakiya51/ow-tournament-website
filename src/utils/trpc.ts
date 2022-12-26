@@ -1,4 +1,4 @@
-import { httpBatchLink, loggerLink } from "@trpc/client";
+import { httpBatchLink, loggerLink, TRPCClientError } from "@trpc/client";
 import { createTRPCNext } from "@trpc/next";
 import { type inferRouterInputs, type inferRouterOutputs } from "@trpc/server";
 import superjson from "superjson";
@@ -30,6 +30,11 @@ export const trpc = createTRPCNext<AppRouter>({
   ssr: false,
 });
 
+export const isTRPCClientError = (
+  cause: unknown
+): cause is TRPCClientError<AppRouter> => {
+  return cause instanceof TRPCClientError;
+};
 /**
  * Inference helper for inputs
  * @example type HelloInput = RouterInputs['example']['hello']

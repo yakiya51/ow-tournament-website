@@ -1,30 +1,88 @@
 import NextAuth, { type NextAuthOptions } from "next-auth";
-import DiscordProvider from "next-auth/providers/discord";
-// Prisma adapter for NextAuth, optional and can be removed
+import BattleNetProvider from "next-auth/providers/battlenet";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-
-import { env } from "../../../env/server.mjs";
-import { prisma } from "../../../server/db/client";
+import { env } from "@env/server.mjs";
+import { prisma } from "@server/db/client";
+import type { AdapterAccount } from "next-auth/adapters";
 
 export const authOptions: NextAuthOptions = {
-  // Include user.id on session
   callbacks: {
-    session({ session, user }) {
-      if (session.user) {
+    // async signIn({ user, account, profile, email, credentials }) {
+    //   return true;
+    // },
+    async session({ session, token, user }) {
+      const userInfo = await prisma.user.findUnique({
+        where: {
+          id: user.id,
+        },
+        select: {
+          asTeamMember: {
+            include: {
+              team: true,
+            },
+          },
+          accounts: {
+            where: {
+              provider: "battlenet",
+            },
+          },
+        },
+      });
+      if (session && session.user) {
+        session.user.team = userInfo?.asTeamMember?.team;
         session.user.id = user.id;
+        // session.user.bNetId = (userInfo?.accounts[0] as Account).id;
       }
       return session;
     },
   },
-  // Configure one or more authentication providers
-  adapter: PrismaAdapter(prisma),
+  events: {
+    // async linkAccount({ user, account, profile }) {
+    //   console.log(user, account, profile);
+    //   return;
+    // },
+  },
+  adapter: {
+    ...PrismaAdapter(prisma),
+    async linkAccount(data) {
+      if (data.provider === "battlenet") {
+        // Remove the "sub" attribute because it causes an error
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { sub, ...accountData } = data;
+        await prisma.account.create({
+          data: {
+            id: data.sub as string,
+            ...accountData,
+          },
+        });
+      } else {
+        (await prisma.account.create({ data })) as unknown as AdapterAccount;
+      }
+    },
+  },
   providers: [
-    DiscordProvider({
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
+    BattleNetProvider({
+      clientId: env.BATTLENET_CLIENT_ID,
+      clientSecret: env.BATTLENET_CLIENT_SECRET,
+      issuer: "https://us.battle.net/oauth",
     }),
-    // ...add more providers here
+    // DiscordProvider({
+    //   clientId: env.DISCORD_CLIENT_ID,
+    //   clientSecret: env.DISCORD_CLIENT_SECRET,
+    //   profile(profile) {
+    //     return {
+    //       id: profile.id,
+    //       name: profile.username,
+    //       email: profile.email,
+    //       image: profile.image_url,
+    //       discordTag: profile.username + "#" + profile.discriminator,
+    //     };
+    //   },
+    // }),
   ],
+  pages: {
+    signIn: "/login",
+  },
 };
 
 export default NextAuth(authOptions);

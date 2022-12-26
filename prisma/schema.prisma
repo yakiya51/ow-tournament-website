@@ -48,13 +48,11 @@ model VerificationToken {
 
 model User {
   id              String           @id @default(cuid())
-  name            String?
+  name            String
   email           String?          @unique
   emailVerified   DateTime?
   image           String?
-  discordTag      String?
-  battleTag       String?
-  battleNetId     Int?             @unique
+  verified        Boolean          @default(false)
   createdAt       DateTime         @default(now())
   accounts        Account[]
   sessions        Session[]
@@ -72,15 +70,13 @@ model Team {
 }
 
 model TeamInvitation {
-  teamId     String
-  userId     String
-  resolved   Boolean   @default(false)
-  resolvedAt DateTime?
-  createdAt  DateTime  @default(now())
-  team       Team      @relation(fields: [teamId], references: [id])
-  user       User      @relation(fields: [userId], references: [id])
+  teamId    String
+  userId    String
+  createdAt DateTime @default(now())
+  team      Team     @relation(fields: [teamId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
-  @@id([teamId, userId])
+  @@unique([teamId, userId])
 }
 
 model TeamMember {
